@@ -190,27 +190,30 @@ function generarContrato() {
     contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
   }
 
-  if (plan["WINTV L1 MAX PREMIUM / L1 MAX"] && plan["WINTV L1 MAX PREMIUM / L1 MAX"].toString().toLowerCase() !== "no aplica") {
-    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
-	contrato += `Su nombre completo es\n`;
-	contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;	
-    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n\n`;
-    contrato += `Una suscripción para el servicio de streaming “WINTV L1MAX PREMIUM / L1 MAX”.\n`;
-    contrato += `El precio mensual de la suscripción es de S/ ${plan["WINTV L1 MAX PREMIUM / L1 MAX"]} incluido IGV.\n`;
-    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
-    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE)\n\n`;
+if (
+  (plan["WINTV L1 MAX PREMIUM / L1 MAX"] && plan["WINTV L1 MAX PREMIUM / L1 MAX"].toString().trim().toLowerCase() !== "no aplica") ||
+  (plan["DGO"] && plan["DGO"].toString().trim().toLowerCase() !== "no aplica")
+) {
+  contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+  contrato += `Su nombre completo es\n`;
+  contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
+  contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n\n`;
+
+  if (plan["TIPO DE SERVICIO"] && plan["TIPO DE SERVICIO"].toString().trim().toLowerCase() !== "no aplica") {
+    contrato += `Una suscripción para el servicio de streaming ${plan["TIPO DE SERVICIO"]}.\n`;
   }
 
-  if (plan["DGO"] && plan["DGO"].toString().toLowerCase() !== "no aplica") {
-    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
-    contrato += `Su nombre completo es\n`;
-    contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
-    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n\n`;
-    contrato += `Una suscripción para el servicio de streaming “DGO BÁSICO + L1 MAX / DGO FULL”.\n\n`;
-    contrato += `El precio mensual de la suscripción es de S/ ${plan["DGO"]} incluido IGV.\n`;
-    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
-    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE)\n\n`;
+  if (plan["WINTV L1 MAX PREMIUM / L1 MAX"] && plan["WINTV L1 MAX PREMIUM / L1 MAX"].toString().trim().toLowerCase() !== "no aplica") {
+    contrato += `El precio mensual de la suscripción es de S/ ${plan["WINTV L1 MAX PREMIUM / L1 MAX"]} incluido IGV.\n`;
   }
+
+  if (plan["DGO"] && plan["DGO"].toString().trim().toLowerCase() !== "no aplica") {
+    contrato += `El precio mensual de la suscripción es de S/ ${plan["DGO"]} incluido IGV.\n`;
+  }
+
+  contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
+  contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE)\n\n`;
+}
   
   if (winbox1) {
     contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
