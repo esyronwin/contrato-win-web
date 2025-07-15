@@ -18,7 +18,7 @@
       font-size: 16px;
       margin-top: 20px;
     }
-    select, input[type="text"], input[type="file"] {
+    select, input[type="text"] {
       width: 100%;
       padding: 8px;
       margin-top: 10px;
@@ -37,8 +37,9 @@
 
 <h2>Contrato WIN - Versión Web</h2>
 
-<label for="excel">Cargar archivo Excel con planes:</label>
-<input type="file" id="excel" accept=".xlsx" />
+<!-- Eliminado input de archivo -->
+<!-- <label for="excel">Cargar archivo Excel con planes:</label>
+<input type="file" id="excel" accept=".xlsx" /> -->
 
 <label for="plan">Seleccionar plan:</label>
 <select id="plan" disabled onchange="generarContrato()">
@@ -59,10 +60,9 @@
 <script>
 let planesData = [];
 
-document.getElementById("excel").addEventListener("change", function (e) {
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const data = new Uint8Array(e.target.result);
+fetch('prueba.xlsx')
+  .then(response => response.arrayBuffer())
+  .then(data => {
     const workbook = XLSX.read(data, { type: "array" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
@@ -87,9 +87,11 @@ document.getElementById("excel").addEventListener("change", function (e) {
       select.appendChild(option);
     });
     select.disabled = false;
-  };
-  reader.readAsArrayBuffer(e.target.files[0]);
-});
+  })
+  .catch(error => {
+    alert("Error al cargar el archivo de planes. Verifica que prueba.xlsx esté en la misma carpeta.");
+    console.error(error);
+  });
 </script>
 
 <script>
