@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contrato WIN</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0fbfb;
+    }
+    #contrato {
+      background: #e0fafa;
+      padding: 20px;
+      white-space: pre-wrap;
+      border-radius: 10px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    select, input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Contrato WIN - Versión Web</h2>
+
+<label for="excel">Cargar archivo Excel con planes:</label>
+<input type="file" id="excel" accept=".xlsx" />
+
+<label for="plan">Seleccionar plan:</label>
+<select id="plan" disabled onchange="generarContrato()">
+  <option value="">-- Elige un plan --</option>
+</select>
+
+<label for="direccion">Dirección donde se instalará el servicio:</label>
+<input type="text" id="direccion" placeholder="Ej. Av. Los Héroes 456 - Lima" oninput="generarContrato()" />
+
+<label><input type="checkbox" id="fonoCheckbox" onchange="generarContrato()" /> Activar servicio de telefonía fija VoIP</label>
+<label><input type="checkbox" id="winbox1" onchange="generarContrato()" /> Alquilar un (01) equipo WIN BOX</label>
+<label><input type="checkbox" id="winbox2" onchange="generarContrato()" /> Alquilar dos (02) equipos WIN BOX</label>
+<label><input type="checkbox" id="mesh1" onchange="generarContrato()" /> Alquilar un (01) equipo MESH</label>
+<label><input type="checkbox" id="mesh2" onchange="generarContrato()" /> Alquilar dos (02) equipos MESH</label>
+
+<div id="contrato"></div>
+
+<script>
+let planesData = [];
+
+document.getElementById("excel").addEventListener("change", function (e) {
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    const headers = rows[0];
+    const rowsData = rows.slice(1);
+
+    planesData = rowsData.map(r => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        obj[h.trim()] = r[i];
+      });
+      return obj;
+    });
+
+    const select = document.getElementById("plan");
+    select.innerHTML = '<option value="">-- Elige un plan --</option>';
+    planesData.forEach((p, index) => {
+      const option = document.createElement("option");
+      option.value = index;
+      option.text = p["Nombre del plan tarifario"];
+      select.appendChild(option);
+    });
+    select.disabled = false;
+  };
+  reader.readAsArrayBuffer(e.target.files[0]);
+});
+</script>
+
+<script>
+function generarContrato() {
+  const index = document.getElementById("plan").value;
+  const direccion = document.getElementById("direccion").value || "[Dirección aquí]";
+  const fonoActivo = document.getElementById("fonoCheckbox").checked;
+  const winbox1 = document.getElementById("winbox1").checked;
+  const winbox2 = document.getElementById("winbox2").checked;
+  const mesh1 = document.getElementById("mesh1").checked;
+  const mesh2 = document.getElementById("mesh2").checked;
+
+  if (index === "") {
+    document.getElementById("contrato").innerText = "";
+    return;
+  }
+
+  const plan = planesData[index];
+  const hoy = new Date();
+  const dia = hoy.getDate();
+  const mes = hoy.toLocaleString('es-PE', { month: 'long' });
+  const anio = hoy.getFullYear();
+
+  let contrato = `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima usted contrata con WIN, para ello me brinda los siguientes datos:\n\n`;
+  contrato += `Su nombre completo es\n`;
+  contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n`;
+  contrato += `Lugar y Fecha de Nacimiento\n`;
+  contrato += `Correo electrónico para el envío de recibos\n`;
+  contrato += `Su número telefónico es\n`;
+  contrato += `Dirección en la que se instalará el servicio:\n${direccion}\n\n`;
+
+  contrato += `El servicio de internet fijo postpago de WIN es ilimitado, 100% fibra óptica, con velocidad simétrica de ${plan["Velocidad Máxima Contratada (Carga y Descarga)"]} de carga y descarga.\n`;
+  contrato += `Aseguramos ${plan["Velocidad Mínima Garantizada (Carga y Descarga)"]} de carga y descarga. Incluye un equipo terminal router y conector en comodato, deberás devolverlos en buenas condiciones,\ncaso contrario pagarás su valor. El contrato tendrá plazo indeterminado, el contrato podrá ser resuelto de acuerdo a la normativa de condiciones de uso.\n\n`;
+
+  contrato += `El precio mensual es de ${plan["Tarifa (Incluye IGV)"]} incluye I.G.V.\n`;
+
+  if (plan["06 primeros meses"] && plan["06 primeros meses"].toString().toLowerCase() !== "no aplica") {
+    contrato += `Por promoción, los primeros ${plan["06 primeros meses"]}`;
+    const velocidadDupMax = plan["Velocidad Máxima"]?.toString().toLowerCase() !== "no aplica" ? plan["Velocidad Máxima"] : null;
+    const velocidadDupMin = plan["Velocidad Mínima"]?.toString().toLowerCase() !== "no aplica" ? plan["Velocidad Mínima"] : null;
+    if (velocidadDupMax || velocidadDupMin) {
+      contrato += ", ";
+      if (velocidadDupMax) contrato += `incrementamos tu velocidad a ${velocidadDupMax}`;
+      if (velocidadDupMax && velocidadDupMin) contrato += ", ";
+      if (velocidadDupMin) contrato += `\ncon un mínimo garantizado de ${velocidadDupMin} de carga y descarga`;
+    }
+    contrato += ".\n";
+  }
+
+  if (plan["03 primeros meses"] && plan["03 primeros meses"].toString().toLowerCase() !== "no aplica") {
+    contrato += `Pagarás a un precio promocional de S/ ${plan["03 primeros meses"]}, incluye I.G.V. por los primeros 03 meses.\n`;
+  }
+
+  contrato += `\nVencido el plazo, se aplicarán las condiciones regulares de tu plan contratado. La tarifa de reconexión es de S/ 8.85, incluye IGV.\n\n`;
+
+  if (fonoActivo) {
+    contrato += `El servicio de telefonía fija VoIP postpago se brinda a través de la red de internet de WIN. Tu servicio incluye un equipo de telefonía analógico en comodato, llamadas ilimitadas dentro de la red de WIN y un paquete mensual de 100 minutos para llamar a todo operador a nivel nacional, no acumulable. El precio mensual del servicio es de S/ 10.00 incluido I.G.V.\n`;
+    contrato += `\n(En caso se trate de portabilidad de otro operador)\n\n`;
+    contrato += `Para fines de la portabilidad solicitada, me confirma lo siguiente:\n`;
+    contrato += `Concesionario Cedente (Empresa Operadora)\n`;
+    contrato += `Número Telefónico Fijo a Portar\n`;
+    contrato += `Modalidad de Pago con el Cedente (Postpago/Prepago)\n`;
+    contrato += `El trámite es gratuito, tiene un plazo de 24 horas desde la solicitud y se encuentra sujeto a condiciones técnicas de acuerdo al Artículo 5 del Reglamento de Portabilidad Numérica.\n\n`;
+  }
+
+  contrato += `La fecha de facturación es el 14 de cada mes, y la fecha de vencimiento es el 28 del mismo mes.\n\n`;
+
+  contrato += `Le agradeceré que diga fuerte y claramente que SÍ ACEPTA los términos de la presente contratación. (CLIENTE RESPONDE).\n\n`;
+
+  contrato += `Para culminar, WIN realizará el tratamiento de datos personales para gestiones relacionadas con el servicio, se almacenarán tus datos en nuestro Banco de Datos de clientes de acuerdo a la normativa vigente. Podrás ejercer tus derechos ARCO escribiendo al correo protecciondedatos@win.pe. Para más información visita win.pe/protección-de-datos.\n\n`;
+
+  contrato += `¿Declaras conocer la Política de Privacidad y autorizas de forma previa, expresa, informada e inequívoca el tratamiento de datos personales? \n(CLIENTE RESPONDE SI)\n`;
+  contrato += `¿Aceptas el envío de comunicaciones comerciales, publicitarias y encuestas? (CLIENTE RESPONDE SI/NO).\n\n`;
+
+  if (plan["MESH"] && plan["MESH"].toString().toLowerCase() !== "no aplica") {
+
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n`;
+    contrato += `${plan["MESH"]} equipos no terminales Mesh en comodato.\n`;
+    contrato += `La entrega se realizará en el domicilio del servicio de internet, el titular deberá exhibir el DNI/CE en físico, para validar su identidad, y suscribir el Acta de Entrega.\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
+  }
+
+  if (plan["OPT2"] && plan["OPT2"].toString().toLowerCase() !== "no aplica") {
+
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n`;
+    contrato += `${plan["OPT2"]} equipos no terminales Mesh en comodato.\n`;
+    contrato += `La instalación alámbrica tiene un costo adicional de S/ 55.00 incluido IGV por equipo\n`;
+
+    if ((plan["Nombre del plan tarifario"] || "").toUpperCase().includes("WIN L 1000")) {
+      contrato += `Por promoción, tendrá un precio de S/ 0.00 (cero soles).\n`;
+    }
+    contrato += `¿Deseas la instalación alámbrica? (CLIENTE RESPONDE)\n\n`;
+    contrato += `La entrega se realizará en el domicilio del servicio de internet, el titular deberá exhibir el DNI/CE en físico, para validar su identidad, y suscribir el Acta de Entrega.\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
+  }
+
+  if (plan["WINTV L1 MAX PREMIUM / L1 MAX"] && plan["WINTV L1 MAX PREMIUM / L1 MAX"].toString().toLowerCase() !== "no aplica") {
+    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+	contrato += `Su nombre completo es\n`;
+	contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;	
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n\n`;
+    contrato += `Una suscripción para el servicio de streaming “WINTV L1MAX PREMIUM / L1 MAX”.\n`;
+    contrato += `El precio mensual de la suscripción es de S/ ${plan["WINTV L1 MAX PREMIUM / L1 MAX"]} incluido IGV.\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE)\n\n`;
+  }
+
+  if (plan["DGO"] && plan["DGO"].toString().toLowerCase() !== "no aplica") {
+    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+    contrato += `Su nombre completo es\n`;
+    contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, accedes a:\n\n`;
+    contrato += `Una suscripción para el servicio de streaming “DGO BÁSICO + L1 MAX / DGO FULL”.\n\n`;
+    contrato += `El precio mensual de la suscripción es de S/ ${plan["DGO"]} incluido IGV.\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE)\n\n`;
+  }
+  
+  if (winbox1) {
+    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+    contrato += `Su nombre completo es\n`;
+    contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
+	
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, decides alquilar:\n`;
+
+    contrato += `\n(i) Un (01) equipo “WIN BOX”, con sus accesorios.\n\n`;
+    contrato += `El cargo de alquiler mensual es de S/ 10.00 mensuales incluido IGV.\n\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n\n`;
+    contrato += `El cese del alquiler se ejecutará a los cinco días de solicitado. En caso se produzca la baja del servicio de internet, el acuerdo quedará sin efecto. \n\n`;	
+	contrato += `La entrega se realizará en el domicilio del servicio de internet, el titular deberá exhibir el DNI/CE en físico, para validar su identidad, y suscribir el Acta de Entrega.\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
+  }
+
+  if (winbox2) {
+    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+    contrato += `Su nombre completo es\n`;
+    contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
+	
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, decides alquilar:\n`;
+
+    contrato += `\n(i) Dos (02) equipo “WIN BOX”, con sus accesorios.\n\n`;
+    contrato += `El cargo de alquiler mensual es de S/ 20.00 mensuales incluido IGV.\n\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n\n`;
+    contrato += `El cese del alquiler se ejecutará a los cinco días de solicitado. En caso se produzca la baja del servicio de internet, el acuerdo quedará sin efecto. \n\n`;	
+	contrato += `La entrega se realizará en el domicilio del servicio de internet, el titular deberá exhibir el DNI/CE en físico, para validar su identidad, y suscribir el Acta de Entrega.\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
+  }
+
+  if (mesh1) {
+    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+    contrato += `Su nombre completo es\n`;
+    contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
+	
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, decides alquilar:\n`;
+
+    contrato += `\nUn (01) equipo no terminal Mesh,\n\n`;
+    contrato += `El cargo de alquiler mensual es de S/ 10.00 mensuales incluido IGV., el cual será incluido en el recibo de internet fijo. En el primer recibo pagarás un prorrateo desde la fecha de entrega.\n\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n\n`;
+    contrato += `El cese del alquiler se ejecutará a los cinco días de solicitado. En caso se produzca la baja del servicio de internet, el acuerdo quedará sin efecto. \n\n`;	
+	contrato += `La entrega se realizará en el domicilio del servicio de internet, el titular deberá exhibir el DNI/CE en físico, para validar su identidad, y suscribir el Acta de Entrega.\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
+  }
+
+  if (mesh2) {
+    contrato += `Hoy ${dia} de ${mes} del ${anio}, en la ciudad de Lima, usted contrata con WIN, para ello me brinda los siguientes datos:\n`;
+    contrato += `Su nombre completo es\n`;
+    contrato += `Su número de Documento de Identidad / CE / RUC (10…)\n\n`;
+	
+    contrato += `De manera adicional e independiente al servicio de internet fijo, mientras mantengas vigente el servicio, decides alquilar:\n`;
+
+    contrato += `\nDos (02) equipos no terminales Mesh.\n\n`;
+    contrato += `El cargo de alquiler mensual es de S/ 20.00 mensuales incluido IGV, el cual será incluido en el recibo de internet fijo. En el primer recibo pagarás un prorrateo desde la fecha de entrega.\n\n`;
+    contrato += `Para mayor información de términos y condiciones ingresa a win.pe/\n\n`;
+    contrato += `El cese del alquiler se ejecutará a los cinco días de solicitado. En caso se produzca la baja del servicio de internet, el acuerdo quedará sin efecto. \n\n`;	
+	contrato += `La entrega se realizará en el domicilio del servicio de internet, el titular deberá exhibir el DNI/CE en físico, para validar su identidad, y suscribir el Acta de Entrega.\n`;
+    contrato += `¿Aceptas los términos del presente acuerdo? (CLIENTE RESPONDE).\n\n`;
+  }
+
+contrato += `Esto ha sido todo\n\n`;
+
+contrato += `BIENVENIDO A LA FAMILIA WIN. \n`;
+
+  document.getElementById("contrato").innerText = contrato;
+}
+</script>
+
+</body>
+</html>
