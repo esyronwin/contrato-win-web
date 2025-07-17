@@ -60,7 +60,7 @@
 <script>
 let planesData = [];
 
-fetch('prueba.xlsx')
+fetch('planes.xlsx')
   .then(response => response.arrayBuffer())
   .then(data => {
     const workbook = XLSX.read(data, { type: "array" });
